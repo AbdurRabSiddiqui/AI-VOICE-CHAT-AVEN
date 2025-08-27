@@ -30,7 +30,23 @@ yarn install
 pnpm install
 ```
 
-3. Set up your environment variables in the `.env` file.
+3. Set up your environment variables in the `.env` file:
+
+```bash
+# VAPI Configuration
+VAPI_PRIVATE_KEY=your_vapi_private_key_here
+VAPI_PUBLIC_KEY=your_vapi_public_key_here
+VAPI_ASSISTANT_ID=your_vapi_assistant_id_here
+
+# Google AI Configuration
+GOOGLE_API_KEY=your_google_api_key_here
+
+# Firecrawl Configuration
+FIRECRAWL_API_KEY=your_firecrawl_api_key_here
+
+# Pinecone Configuration
+PINECONE_API_KEY=your_pinecone_api_key_here
+```
 
 4. Start the development server:
 

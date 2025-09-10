@@ -1,6 +1,6 @@
 # BOT – Customer Support Voice Agent
 
-An AI voice assistant built with Next.js, React, and the Vapi Web SDK. It answers user questions using a vector database (Pinecone) populated from the Aven website and generates answers via Google Generative AI (Gemini-compatible OpenAI API endpoint).
+An AI voice assistant built for credit card company Aven's challenge with Next.js, React, and the Vapi Web SDK. It answers user questions using a vector database (Pinecone) populated from the Aven website and generates answers via Google Generative AI (Gemini-compatible OpenAI API endpoint).
 
 ## Features
 

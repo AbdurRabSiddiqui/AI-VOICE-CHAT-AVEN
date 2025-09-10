@@ -1,36 +1,35 @@
-# Next.js Template
+# BOT – Customer Support Voice Agent
 
-This is a template repository showcasing Next.js Server Actions, React Server Components, and modern data fetching patterns. The project includes a Todo list implementation and examples of API integration with proper loading states and error handling.
+An AI voice assistant built with Next.js, React, and the Vapi Web SDK. It answers user questions using a vector database (Pinecone) populated from the Aven website and generates answers via Google Generative AI (Gemini-compatible OpenAI API endpoint).
 
 ## Features
 
-- **Todo List**: Server-side data mutations using Next.js Server Actions
-- **Data Fetching Example**: Demonstrates React Suspense and loading states
-- **Modern UI**: Built with Shadcn UI components and Tailwind CSS
-- **Error Handling**: Proper error boundaries and user feedback
-- **Type Safety**: Full TypeScript support
+- **Voice Assistant (Vapi)**: In-browser call controls with transcript display via `@vapi-ai/web`.
+- **RAG over Aven website**: Scrape Aven pages with Firecrawl, embed via Google `text-embedding-004`, and store in Pinecone.
+- **Chat Completions API**: `POST /api/chat/completions` performs RAG lookup and returns completions (streaming or non-streaming).
+- **Modern UI**: Tailwind + shadcn/ui components.
+- **Type-safe config**: Runtime env validation with Zod, structured logging.
 
 ## Tech Stack
 
-- [Next.js](https://nextjs.org) - React framework
-- [Shadcn UI](https://ui.shadcn.com/) - Component library
-- [Tailwind CSS](https://tailwindcss.com) - Styling
-- [TypeScript](https://www.typescriptlang.org/) - Type safety
+- Next.js 15, React 19
+- `@vapi-ai/web` (voice), Daily (under the hood)
+- Pinecone (vector DB), Google Generative AI (embeddings + chat)
+- Firecrawl (scraping)
+- Tailwind CSS, shadcn/ui
+- TypeScript, Zod
 
 ## Getting Started
 
-1. Clone the repository
-2. Install dependencies:
+1) Install dependencies
 
 ```bash
 npm install
-# or
-yarn install
-# or
-pnpm install
 ```
 
-3. Set up your environment variables in the `.env` file:
+2) Environment variables
+
+Create a `.env` file with your keys (examples below). Do not commit real keys.
 
 ```bash
 # VAPI Configuration
@@ -48,36 +47,83 @@ FIRECRAWL_API_KEY=your_firecrawl_api_key_here
 PINECONE_API_KEY=your_pinecone_api_key_here
 ```
 
-4. Start the development server:
+3) Run the dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
+4) (Optional) Expose locally via ngrok for external testing
+
+```bash
+ngrok http 3000
+```
+
+## Voice Widget (Vapi)
+
+- Component: `src/app/components/VapiWidget.tsx`
+- Usage: added in `src/app/page.tsx` with `apiKey={env.VAPI_PUBLIC_KEY}` and `assistantId={env.VAPI_ASSISTANT_ID}`.
+- Events handled: `call-start`, `call-end`, `speech-start`, `speech-end`, `message (transcript)`, `error`.
+
+If you see “Meeting ended due to ejection”, check:
+- Assistant configuration in the Vapi dashboard
+- Microphone permissions and HTTPS (ngrok/production)
+- Webhook/function calls your assistant relies on
+
+## Chat Completions API
+
+- File: `src/app/api/chat/completions/route.ts`
+- Endpoint: `POST /api/chat/completions`
+- Flow:
+  - Validate request
+  - Embed last user message with `text-embedding-004`
+  - Query Pinecone index `company-data`, namespace `aven`
+  - Build context and create chat completion using Gemini-compatible OpenAI API (`gemini-1.5-flash`)
+  - Supports `stream: true` for Server-Sent Events
+
+Request example:
+
+```json
+{
+  "model": "gemini-1.5-flash",
+  "messages": [{ "role": "user", "content": "What is Aven?" }],
+  "stream": false
+}
+```
+
+## Populate Pinecone with Aven Website
+
+- Script: `src/scripts/insert-data-to-pinecone.ts`
+- What it does:
+  - Scrapes a set of Aven URLs via Firecrawl (markdown, main content only)
+  - Chunks content (1000 chars), embeds with `text-embedding-004`
+  - Pads vectors to 3072 dims to match the index
+  - Upserts chunks into Pinecone index `company-data`
+
+Run the script:
+
+```bash
+tsx src/scripts/insert-data-to-pinecone.ts
+# or
+node --loader tsx src/scripts/insert-data-to-pinecone.ts
+```
+
+Note: Ensure your Pinecone index `company-data` exists with the correct dimensions (3072) and set your API keys in `.env`.
 
 ## Project Structure
 
-- `app/page.tsx` - Main page with Todo list implementation
-- `app/example/page.tsx` - Data fetching example with loading states
-- `app/actions/*` - Server Actions for data mutations
-- `components/ui/*` - Shadcn UI components
+- `src/app/page.tsx` – Main page rendering the voice widget and UI
+- `src/app/components/VapiWidget.tsx` – Vapi voice widget
+- `src/app/api/chat/completions/route.ts` – Chat completion + RAG endpoint
+- `src/scripts/insert-data-to-pinecone.ts` – Scrape and upsert to Pinecone
+- `src/config/env.ts` – Zod-validated environment loader
 
-## Learn More
+## Troubleshooting
 
-To learn more about the technologies used in this project:
+- Voice call ends immediately (ejection): verify Vapi assistant config, mic permissions, and network (ngrok)
+- Empty `Vapi error: {}`: check browser console network tab and Vapi dashboard logs
+- Pinecone queries empty: confirm index/namespace and that the script successfully inserted data
 
-- [Next.js Documentation](https://nextjs.org/docs) - Next.js features and API
-- [Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions) - Learn about Next.js Server Actions
-- [Shadcn UI Documentation](https://ui.shadcn.com) - Learn about Shadcn UI components
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs) - Learn about Tailwind CSS
+## License
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme).
-
-Check out the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT

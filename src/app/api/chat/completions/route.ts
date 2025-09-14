@@ -8,8 +8,11 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const logger = new Logger("API:Chat");
 
 const pinecone = new Pinecone({ apiKey: env.PINECONE_API_KEY });
-
-const namespace = pinecone.index("company-data").namespace("aven");
+const pineconeHost = process.env.PINECONE_HOST;
+const index = pineconeHost
+  ? pinecone.index("company-data", pineconeHost)
+  : pinecone.index("company-data");
+const namespaceHandle = index.namespace("company-data");
 
 const ai = new GoogleGenerativeAI(env.GOOGLE_API_KEY!);
 const embeddingModel = ai.getGenerativeModel({ model: "text-embedding-004" });
@@ -60,44 +63,43 @@ export async function POST(req: NextRequest) {
     logger.info("Query", query);
     const embedding = await embeddingModel.embedContent(query);
     logger.info("Embedding", embedding);
-    const response = await namespace.query({
-      vector: embedding.embedding.values,
-      topK: 2,
+    const vector = [...embedding.embedding.values];
+    while (vector.length < 3072) vector.push(0);
+    const response = await namespaceHandle.query({
+      vector,
+      topK: 8,
       includeMetadata: true,
     });
 
     logger.info("Pinecone response", response);
-    const context = response.matches
-      ?.map(match => match.metadata?.text)
-      .join("\n\n");
+    const matches = response.matches || [];
+    logger.info("Match count", matches.length);
+    logger.info(
+      "Matches",
+      matches.map(m => ({ id: m.id, score: m.score, text: m.metadata?.text }))
+    );
+    const threshold = 0.5;
+    const goodMatches = (response.matches || []).filter(m =>
+      typeof m.score === "number" ? m.score >= threshold : true
+    );
+    const context = goodMatches.map(match => match.metadata?.text).join("\n\n");
 
-    logger.info("Context", context);
-    const contextPrompt = `Answer the question based on the context provided.
-    Context: ${context}
-    `;
-    logger.info("Context prompt", contextPrompt);
-    const prompt = await gemini.chat.completions.create({
-      model: "gemini-1.5-flash",
-      messages: [
-        {
-          role: "user",
-          content: ` `,
-        },
-      ],
-      max_tokens: 500,
-      temperature: 0.7,
-    });
+    // No explicit fallback response; proceed to create completion even if context is empty
 
-    const modifiedMessage = [
+    // Build instruction inside the user content (prefer context if relevant)
+    const completionMessages = [
       ...messages.slice(0, messages.length - 1),
-      { ...lastMessage, content: prompt.choices[0].message.content },
+      {
+        role: "user" as const,
+        content: `You are a helpful voice assistant. Prefer using the provided CONTEXT when it is relevant. If the CONTEXT lacks relevant information, still answer the user's question using your general knowledge. Keep responses concise, clear, and factual.\n\nCONTEXT:\n${context}\n\nUser question: ${query}`,
+      },
     ];
 
     if (stream) {
       logger.info("Creating streaming completion");
       const completionStream = await gemini.chat.completions.create({
         model: "gemini-1.5-flash",
-        messages: modifiedMessage,
+        messages: completionMessages,
         max_tokens: max_tokens || 150,
         temperature: temperature || 0.7,
         stream: true,
@@ -131,7 +133,7 @@ export async function POST(req: NextRequest) {
       logger.info("Creating non-streaming completion");
       const completion = await gemini.chat.completions.create({
         model: "gemini-1.5-flash",
-        messages: modifiedMessage,
+        messages: completionMessages,
         max_tokens: max_tokens || 150,
         temperature: temperature || 0.7,
         stream: false,

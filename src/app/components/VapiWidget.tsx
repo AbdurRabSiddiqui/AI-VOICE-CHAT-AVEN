@@ -6,13 +6,11 @@ import Vapi from "@vapi-ai/web";
 interface VapiWidgetProps {
   apiKey: string;
   assistantId: string;
-  config?: Record<string, unknown>;
 }
 
 const VapiWidget: React.FC<VapiWidgetProps> = ({
   apiKey,
   assistantId,
-  config = {},
 }) => {
   const [vapi, setVapi] = useState<Vapi | null>(null);
   const [isConnected, setIsConnected] = useState(false);

@@ -29,15 +29,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const {
-      model,
-      messages,
-      max_tokens,
-      temperature,
-      stream,
-      call,
-      ...restParams
-    } = body;
+    const { messages, max_tokens, temperature, stream } = body;
 
     // Validate required fields
     if (!messages || !Array.isArray(messages) || messages.length === 0) {

@@ -78,7 +78,6 @@ async function main() {
   // Generate embeddings for each chunk with 10 RPM rate limit
   // Using embedding-001 which supports configurable dimensions up to 3072
   const model = ai.getGenerativeModel({ model: "text-embedding-004" });
-  const embeddings: { id: string; values: number[]; metadata: any }[] = [];
   const index = pineconeHost
     ? pc.index("company-data", pineconeHost)
     : pc.index("company-data");
@@ -113,10 +112,8 @@ async function main() {
       },
     };
 
-    // Insert each chunk individually into Pinecone under the 'aven' namespace
-    const pineconeResponse = await index
-      .namespace('company-data')
-      .upsert([embeddingData]);
+    // Insert each chunk individually into Pinecone under the 'company-data' namespace
+    await index.namespace('company-data').upsert([embeddingData]);
     logger.info(`Inserted chunk ${i + 1}/${chunks.length} into Pinecone (ns: company-data)`);
 
     // Rate limit: 10 RPM = 6 seconds between requests

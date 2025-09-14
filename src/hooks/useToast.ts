@@ -1,26 +1,17 @@
 import * as React from "react";
-import type {
-  ToastActionElement,
-  ToastProps,
-} from "@/components/ui/toast";
+import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
 
-export type ToasterToast = ToastProps & {
+export type ToastData = ToastProps & {
   id: string;
   title?: React.ReactNode;
   description?: React.ReactNode;
   action?: ToastActionElement;
 };
 
-type ToastContextValue = {
-  toasts: ToasterToast[];
-};
-
-const ToastContext = React.createContext<ToastContextValue>({ toasts: [] });
-
-export function useToast(): ToastContextValue {
-  return React.useContext(ToastContext);
+export function useToast(): { toasts: ToastData[] } {
+  // Placeholder hook to satisfy build; returns no toasts.
+  // Swap with a full toast store/dispatcher if runtime toasts are needed.
+  return { toasts: [] };
 }
-
-export default useToast;
 
 

@@ -7,7 +7,7 @@ export default async function Home() {
         {/* Header Section */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-white mb-6 tracking-tight">
-            Aven Support
+            BOT
           </h1>
           <div className="mx-auto max-w-3xl">
             <p className="text-xl text-gray-300 leading-relaxed mb-4">

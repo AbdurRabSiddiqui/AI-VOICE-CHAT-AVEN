@@ -8,6 +8,7 @@ dotenv.config();
 
 const ai = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! });
+const pineconeHost = process.env.PINECONE_HOST;
 const logger = new Logger("InsertDataToPinecone");
 
 async function main() {
@@ -17,10 +18,18 @@ async function main() {
 
   const scrapeUrls = [
     "https://www.aven.com",
-    "https://www.aven.com/support",
-    "https://www.aven.com/education",
-    "https://www.aven.com/app",
+    "https://www.aven.com/home-equity-visa-card",
+    "https://www.aven.com/home-equity-cash-card",
+    "https://www.aven.com/rewards-visa-card",
     "https://www.aven.com/reviews",
+    "https://www.aven.com/support",
+    "https://www.aven.com/app",
+    "https://www.aven.com/about",
+    "https://www.aven.com/contact",
+    "https://www.aven.com/blog",
+    "https://www.aven.com/careers",
+    "https://www.aven.com/press",
+    "https://my.aven.com/login",
   ];
 
   let allText = "";
@@ -70,7 +79,9 @@ async function main() {
   // Using embedding-001 which supports configurable dimensions up to 3072
   const model = ai.getGenerativeModel({ model: "text-embedding-004" });
   const embeddings: { id: string; values: number[]; metadata: any }[] = [];
-  const index = pc.index("company-data");
+  const index = pineconeHost
+    ? pc.index("company-data", pineconeHost)
+    : pc.index("company-data");
 
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
@@ -102,9 +113,11 @@ async function main() {
       },
     };
 
-    // Insert each chunk individually into Pinecone
-    const pineconeResponse = await index.upsert([embeddingData]);
-    logger.info(`Inserted chunk ${i + 1}/${chunks.length} into Pinecone`);
+    // Insert each chunk individually into Pinecone under the 'aven' namespace
+    const pineconeResponse = await index
+      .namespace('company-data')
+      .upsert([embeddingData]);
+    logger.info(`Inserted chunk ${i + 1}/${chunks.length} into Pinecone (ns: company-data)`);
 
     // Rate limit: 10 RPM = 6 seconds between requests
     if (i < chunks.length - 1) {

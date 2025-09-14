@@ -21,13 +21,13 @@ An AI voice assistant built for credit card company Aven's challenge with Next.j
 
 ## Getting Started
 
-1) Install dependencies
+1. Install dependencies
 
 ```bash
 npm install
 ```
 
-2) Environment variables
+2. Environment variables
 
 Create a `.env` file with your keys (examples below). Do not commit real keys.
 
@@ -47,13 +47,13 @@ FIRECRAWL_API_KEY=your_firecrawl_api_key_here
 PINECONE_API_KEY=your_pinecone_api_key_here
 ```
 
-3) Run the dev server
+3. Run the dev server
 
 ```bash
 npm run dev
 ```
 
-4) (Optional) Expose locally via ngrok for external testing
+4. (Optional) Expose locally via ngrok for external testing
 
 ```bash
 ngrok http 3000
@@ -66,6 +66,7 @@ ngrok http 3000
 - Events handled: `call-start`, `call-end`, `speech-start`, `speech-end`, `message (transcript)`, `error`.
 
 If you see “Meeting ended due to ejection”, check:
+
 - Assistant configuration in the Vapi dashboard
 - Microphone permissions and HTTPS (ngrok/production)
 - Webhook/function calls your assistant relies on

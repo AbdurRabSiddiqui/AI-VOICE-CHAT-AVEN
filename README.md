@@ -127,3 +127,4 @@ Note: Ensure your Pinecone index `company-data` exists with the correct dimensio
 ## License
 
 MIT
+# ai-chat
